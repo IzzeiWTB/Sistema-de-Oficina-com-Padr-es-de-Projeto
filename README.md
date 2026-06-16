@@ -223,7 +223,14 @@ Documentação automática das APIs:
 
 O arquivo `render.yaml` configura o deploy automático de ambos os microsserviços no Render.com como _Web Services_ independentes.
 
-**URL da aplicação publicada:** `(link a ser inserido após o deploy)`
+### 🔗 Links de Acesso — Sistema em Produção
+
+| Serviço | URL |
+|---------|-----|
+| **Microsserviço de Oficina** (API + Swagger) | [sistema-de-oficina-com-padr-es-de-projeto.onrender.com/docs](https://sistema-de-oficina-com-padr-es-de-projeto.onrender.com/docs) |
+| **Microsserviço de Notificações** (API + Swagger) | [servico-notificacao-0fi8.onrender.com/docs](https://servico-notificacao-0fi8.onrender.com/docs) |
+
+> ⚠️ Os serviços estão no plano gratuito do Render. Na primeira requisição após inatividade podem demorar ~30 segundos para acordar (cold start).
 
 ---
 
