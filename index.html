@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Mecânica Central — Sistema de Ordens</title>
+    <meta name="description" content="Sistema de gerenciamento de ordens de serviço para auto mecânica com arquitetura de microsserviços.">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --indigo: #4f46e5;
+            --indigo-hover: #4338ca;
+            --indigo-light: rgba(79,70,229,0.15);
+            --violet: #7c3aed;
+            --emerald: #10b981;
+            --emerald-light: rgba(16,185,129,0.12);
+            --amber: #f59e0b;
+            --red: #ef4444;
+            --bg: #0a0e1a;
+            --surface: rgba(255,255,255,0.04);
+            --surface-hover: rgba(255,255,255,0.07);
+            --border: rgba(255,255,255,0.08);
+            --border-focus: rgba(79,70,229,0.5);
+            --text: #f1f5f9;
+            --text-2: #94a3b8;
+            --text-3: #64748b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        /* ── Header ── */
+        header {
+            max-width: 1100px;
+            margin: 0 auto 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 42px; height: 42px;
+            background: linear-gradient(135deg, var(--indigo), var(--violet));
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+        }
+
+        .logo-text h1 {
+            font-size: 18px;
+            font-weight: 600;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-text p { font-size: 12px; color: var(--text-3); }
+
+        .status-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .status-chip {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 99px;
+            padding: 5px 12px;
+            font-size: 12px;
+            color: var(--text-2);
+        }
+
+        .status-chip .dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--text-3);
+            transition: background 0.4s ease;
+        }
+
+        .status-chip.online .dot { background: var(--emerald); box-shadow: 0 0 6px var(--emerald); }
+        .status-chip.offline .dot { background: var(--red); }
+
+        /* ── Layout Grid ── */
+        .grid {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 420px 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media (max-width: 800px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+
+        /* ── Card base ── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 28px;
+            backdrop-filter: blur(10px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text);
+        }
+
+        .card-title-icon {
+            width: 30px; height: 30px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px;
+        }
+
+        .card-title-icon.indigo { background: var(--indigo-light); }
+        .card-title-icon.emerald { background: var(--emerald-light); }
+
+        /* ── Form ── */
+        .form-group { margin-bottom: 16px; }
+
+        label.field-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-2);
+            display: block;
+            margin-bottom: 7px;
+        }
+
+        input[type="text"], select {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(10,14,26,0.6);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            outline: none;
+            transition: border 0.25s, box-shadow 0.25s;
+        }
+
+        input[type="text"]:focus, select:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(79,70,229,0.15);
+        }
+
+        select option { background: #1e293b; }
+
+        .addons-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .addon-card {
+            position: relative;
+            background: rgba(10,14,26,0.6);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+
+        .addon-card:has(input:checked) {
+            border-color: var(--indigo);
+            background: var(--indigo-light);
+        }
+
+        .addon-card input[type="checkbox"] {
+            position: absolute;
+            top: 12px; right: 12px;
+            accent-color: var(--indigo);
+            width: 16px; height: 16px;
+            cursor: pointer;
+        }
+
+        .addon-card .addon-emoji { font-size: 20px; margin-bottom: 6px; }
+        .addon-card .addon-name { font-size: 13px; font-weight: 500; }
+        .addon-card .addon-price { font-size: 12px; color: var(--emerald); margin-top: 2px; }
+
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: var(--indigo);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            margin-top: 6px;
+            cursor: pointer;
+            transition: all 0.25s;
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--indigo-hover);
+            box-shadow: 0 8px 20px -8px var(--indigo);
+            transform: translateY(-1px);
+        }
+
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* Spinner */
+        .spinner {
+            width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: none;
+        }
+        .btn-primary.loading .spinner { display: block; }
+        .btn-primary.loading .btn-label { display: none; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── Resultado ── */
+        #resultado {
+            display: none;
+            margin-top: 16px;
+            background: var(--emerald-light);
+            border: 1px solid rgba(16,185,129,0.2);
+            border-radius: 12px;
+            padding: 18px;
+            animation: fadeSlide 0.4s ease;
+        }
+
+        @keyframes fadeSlide {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-title {
+            display: flex; align-items: center; gap: 7px;
+            font-size: 14px; font-weight: 600;
+            color: var(--emerald);
+            margin-bottom: 12px;
+        }
+
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 7px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 13px;
+        }
+
+        .result-row:last-child { border-bottom: none; }
+        .result-row span:first-child { color: var(--text-2); }
+        .result-row span:last-child { font-weight: 500; }
+        .result-total { color: var(--emerald) !important; font-size: 16px !important; }
+
+        /* ── Notifications Panel ── */
+        .notif-badge {
+            background: var(--indigo);
+            color: white;
+            border-radius: 99px;
+            padding: 2px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            min-width: 22px;
+            text-align: center;
+        }
+
+        .btn-clear {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-3);
+            border-radius: 7px;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .btn-clear:hover { border-color: var(--red); color: var(--red); }
+
+        #notifications-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 460px;
+            overflow-y: auto;
+        }
+
+        #notifications-list::-webkit-scrollbar { width: 4px; }
+        #notifications-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        .notif-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 13px;
+            animation: fadeSlide 0.3s ease;
+        }
+
+        .notif-icon {
+            width: 34px; height: 34px; flex-shrink: 0;
+            background: var(--indigo-light);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+        }
+
+        .notif-body { flex: 1; }
+        .notif-cliente { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+        .notif-msg { font-size: 12px; color: var(--text-2); margin-bottom: 6px; }
+        .notif-meta { display: flex; align-items: center; gap: 8px; }
+        .notif-canal { font-size: 11px; background: var(--emerald-light); color: var(--emerald); border-radius: 5px; padding: 2px 7px; }
+        .notif-time { font-size: 11px; color: var(--text-3); }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 40px 0;
+            color: var(--text-3);
+        }
+
+        .empty-state .empty-icon { font-size: 32px; }
+        .empty-state p { font-size: 13px; }
+
+        /* ── Architecture Badge ── */
+        .arch-footer {
+            max-width: 1100px;
+            margin: 20px auto 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .arch-tag {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 99px;
+            padding: 4px 12px;
+            font-size: 11px;
+            color: var(--text-3);
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+    <div class="logo">
+        <div class="logo-icon">🔧</div>
+        <div class="logo-text">
+            <h1>Auto Mecânica Central</h1>
+            <p>Sistema de Ordens — Arquitetura Limpa + Microsserviços</p>
+        </div>
+    </div>
+    <div class="status-bar">
+        <div class="status-chip" id="chip-oficina">
+            <div class="dot"></div>
+            <span>Oficina API</span>
+        </div>
+        <div class="status-chip" id="chip-notificacao">
+            <div class="dot"></div>
+            <span>Notificações API</span>
+        </div>
+    </div>
+</header>
+
+<!-- ── Main Grid ── -->
+<div class="grid">
+
+    <!-- Coluna Esquerda: Formulário -->
+    <div>
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="card-title-icon indigo">📋</div>
+                    Nova Ordem de Serviço
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="field-label" for="cliente">Nome do Cliente</label>
+                <input type="text" id="cliente" placeholder="Ex: João Silva">
+            </div>
+
+            <div class="form-group">
+                <label class="field-label" for="veiculo">Veículo</label>
+                <input type="text" id="veiculo" placeholder="Ex: Honda Civic 2022">
+            </div>
+
+            <div class="form-group">
+                <label class="field-label" for="servicoBase">Serviço Principal</label>
+                <select id="servicoBase">
+                    <option value="motor">🔩 Reparo de Motor — R$ 1.500,00</option>
+                    <option value="suspensao">🔧 Reparo de Suspensão — R$ 800,00</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="field-label">Adicionais</label>
+                <div class="addons-grid">
+                    <label class="addon-card">
+                        <input type="checkbox" id="oleo" value="oleo">
+                        <div class="addon-emoji">🛢️</div>
+                        <div class="addon-name">Troca de Óleo</div>
+                        <div class="addon-price">+ R$ 180,00</div>
+                    </label>
+                    <label class="addon-card">
+                        <input type="checkbox" id="lavagem" value="lavagem">
+                        <div class="addon-emoji">🚿</div>
+                        <div class="addon-name">Lavagem Completa</div>
+                        <div class="addon-price">+ R$ 70,00</div>
+                    </label>
+                </div>
+            </div>
+
+            <button class="btn-primary" id="btnSubmit" onclick="enviarOrdem()">
+                <div class="spinner"></div>
+                <span class="btn-label">⚡ Gerar Ordem de Serviço</span>
+            </button>
+
+            <div id="resultado"></div>
+        </div>
+    </div>
+
+    <!-- Coluna Direita: Notificações -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">
+                <div class="card-title-icon emerald">🔔</div>
+                Painel de Notificações
+                <span class="notif-badge" id="notif-count">0</span>
+            </div>
+            <button class="btn-clear" onclick="limparHistorico()">Limpar</button>
+        </div>
+
+        <div id="notifications-list">
+            <div class="empty-state">
+                <div class="empty-icon">📭</div>
+                <p>Nenhuma notificação ainda.</p>
+                <p>Gere uma ordem de serviço para ver o padrão Observer em ação.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Architecture Footer ── -->
+<div class="arch-footer">
+    <span class="arch-tag">Clean Architecture</span>
+    <span class="arch-tag">Singleton</span>
+    <span class="arch-tag">Factory Method</span>
+    <span class="arch-tag">Decorator</span>
+    <span class="arch-tag">Observer</span>
+    <span class="arch-tag">Microsserviços</span>
+    <span class="arch-tag">SOLID</span>
+    <span class="arch-tag">Docker</span>
+</div>
+
+<script>
+    // ── URLs de Produção (Render.com)
+    const OFICINA_URL  = 'https://sistema-de-oficina-com-padr-es-de-projeto.onrender.com';
+    const NOTIF_URL    = 'https://servico-notificacao-0fi8.onrender.com';
+    const POLL_INTERVAL = 4000; // ms
+
+    const formatter = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    // ── Verificar status das APIs
+    async function verificarStatus() {
+        try {
+            const r = await fetch(`${OFICINA_URL}/api/info`, { signal: AbortSignal.timeout(2000) });
+            document.getElementById('chip-oficina').className = r.ok ? 'status-chip online' : 'status-chip offline';
+        } catch { document.getElementById('chip-oficina').className = 'status-chip offline'; }
+
+        try {
+            const r = await fetch(`${NOTIF_URL}/api/health`, { signal: AbortSignal.timeout(2000) });
+            document.getElementById('chip-notificacao').className = r.ok ? 'status-chip online' : 'status-chip offline';
+        } catch { document.getElementById('chip-notificacao').className = 'status-chip offline'; }
+    }
+
+    // ── Buscar notificações do Microsserviço 2
+    let lastCount = 0;
+    async function atualizarNotificacoes() {
+        try {
+            const r = await fetch(`${NOTIF_URL}/api/historico`);
+            const data = await r.json();
+            const lista = data.historico || [];
+            const total = data.total || 0;
+
+            document.getElementById('notif-count').textContent = total;
+
+            if (total === 0) {
+                document.getElementById('notifications-list').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <p>Nenhuma notificação ainda.</p>
+                        <p>Gere uma ordem de serviço para ver o padrão Observer em ação.</p>
+                    </div>`;
+                return;
+            }
+
+            if (total !== lastCount) {
+                lastCount = total;
+                document.getElementById('notifications-list').innerHTML = lista.map(n => `
+                    <div class="notif-item">
+                        <div class="notif-icon">🔔</div>
+                        <div class="notif-body">
+                            <div class="notif-cliente">${n.cliente}</div>
+                            <div class="notif-msg">${n.mensagem}</div>
+                            <div class="notif-meta">
+                                <span class="notif-canal">${n.canal}</span>
+                                <span class="notif-time">🕐 ${n.timestamp}</span>
+                            </div>
+                        </div>
+                    </div>`).join('');
+            }
+        } catch (e) {
+            // API offline, silencioso
+        }
+    }
+
+    // ── Enviar Ordem de Serviço
+    async function enviarOrdem() {
+        const btn = document.getElementById('btnSubmit');
+        const cliente = document.getElementById('cliente').value.trim();
+        const veiculo = document.getElementById('veiculo').value.trim();
+        const servicoBase = document.getElementById('servicoBase').value;
+
+        if (!cliente || !veiculo) {
+            alert('Por favor, preencha o nome do cliente e o veículo.');
+            return;
+        }
+
+        const adicionais = [];
+        if (document.getElementById('oleo').checked) adicionais.push('oleo');
+        if (document.getElementById('lavagem').checked) adicionais.push('lavagem');
+
+        btn.classList.add('loading');
+        btn.disabled = true;
+        document.getElementById('resultado').style.display = 'none';
+
+        try {
+            const response = await fetch(`${OFICINA_URL}/api/ordem-servico`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome_cliente: cliente, veiculo, servico_base: servicoBase, adicionais })
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.detail || 'Erro desconhecido');
+            }
+
+            const data = await response.json();
+
+            const divResultado = document.getElementById('resultado');
+            divResultado.style.display = 'block';
+            divResultado.innerHTML = `
+                <div class="result-title">✅ Ordem Aprovada</div>
+                <div class="result-row"><span>Veículo</span><span>${data.veiculo}</span></div>
+                <div class="result-row"><span>Serviços</span><span>${data.servico_realizado}</span></div>
+                <div class="result-row"><span>Total a Pagar</span><span class="result-total">${formatter.format(data.total_pagar)}</span></div>
+            `;
+
+            // Forçar update imediato no painel de notificações
+            setTimeout(atualizarNotificacoes, 500);
+
+        } catch (err) {
+            alert(`Erro: ${err.message}\n\nVerifique se o Docker está rodando.`);
+        } finally {
+            btn.classList.remove('loading');
+            btn.disabled = false;
+        }
+    }
+
+    // ── Limpar histórico de notificações
+    async function limparHistorico() {
+        await fetch(`${NOTIF_URL}/api/historico`, { method: 'DELETE' });
+        lastCount = 0;
+        await atualizarNotificacoes();
+    }
+
+    // ── Init
+    verificarStatus();
+    atualizarNotificacoes();
+    setInterval(verificarStatus, 5000);
+    setInterval(atualizarNotificacoes, POLL_INTERVAL);
+</script>
+
+</body>
+</html>
