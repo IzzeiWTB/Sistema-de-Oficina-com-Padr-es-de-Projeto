@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  servico_oficina:
+    build:
+      context: ./servico_oficina
+    ports:
+      - "8001:8001"
+    environment:
+      - NOTIFICACAO_URL=http://servico_notificacao:8002
+
+  servico_notificacao:
+    build:
+      context: ./servico_notificacao
+    ports:
+      - "8002:8002"

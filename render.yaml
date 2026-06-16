@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: servico-oficina
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: NOTIFICACAO_URL
+        value: https://servico-notificacao-exemplo.onrender.com
+    rootDir: servico_oficina
+
+  - type: web
+    name: servico-notificacao
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    rootDir: servico_notificacao
