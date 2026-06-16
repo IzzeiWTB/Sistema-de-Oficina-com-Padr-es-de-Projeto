@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from typing import List
 
@@ -20,6 +21,10 @@ class PedidoServicoDTO(BaseModel):
     veiculo: str
     servico_base: str
     adicionais: List[str]
+
+@app.get("/", include_in_schema=False)
+def root():
+    return RedirectResponse(url="/docs")
 
 @app.get("/api/info")
 def get_info():

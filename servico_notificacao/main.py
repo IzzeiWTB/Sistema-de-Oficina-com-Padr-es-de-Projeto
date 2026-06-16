@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from typing import List
 from datetime import datetime
@@ -19,6 +20,10 @@ class NotificacaoPayload(BaseModel):
 
 # Banco de dados em memória para demonstração
 historico_notificacoes: List[dict] = []
+
+@app.get("/", include_in_schema=False)
+def root():
+    return RedirectResponse(url="/docs")
 
 @app.get("/api/health")
 def health():
